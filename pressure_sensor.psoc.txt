@@ -1,0 +1,227 @@
+#include <project.h>
+#include <stdio.h>
+#include <math.h>
+cystatus I2C_status;
+
+_Bool FlgLCD_ERR;
+//#include <string.h>
+uint32  cnt=0;//v10
+uint32  sum_values=0;//v2
+uint32  averaged_value; //v3
+int t= 4355;
+int a,b,c,d,e;
+//float averaged_float;
+int val=0;
+int32  change=0;
+float averaged_float=0;
+int qwer=0;
+
+uint32 adc_raw = 0; // ADC Counts uint32 adc_raw = 0; // ADC Counts
+char   outputstring1[30];
+char   outputstring2[30];
+//float  pressure = -40.14; //v6
+//int m=0;
+//char   outputstring[15]; //v4
+//float  voltage_value=0;
+//float  volt; //v5
+//float convert1=0;
+//int n=0;
+//float  voltage0 = 0;  //v7
+//float  voltage1=0; //v8
+//float  voltage2=0;  //v9
+
+
+
+
+
+
+
+void display_var(){
+   sprintf(outputstring1,"%4.3f",((averaged_float/t)-50));
+  sprintf(outputstring2,"%4.3lu",((averaged_value)));
+       
+    //UART_1_PutString("the value is :");
+   // UART_1_PutString(outputstring1);
+   // send_i2c_data(0x71,((averaged_float/t)-50));
+    send_i2c_data(0x71,750);
+   // UART_1_PutString("mmWc ");
+    CyDelay(1);
+    }
+void display_lcd(){
+    CharLCD_Position(0u,1u);
+CharLCD_PrintString("the value is :");
+CharLCD_Position(1u,2u);
+CharLCD_PosPrintString(1u,2u,outputstring1);
+CharLCD_PrintString("mmWC ");
+CharLCD_PosPrintString(3u,0u,outputstring2);
+    CyDelay(1);
+}
+
+void send_i2c_data( uint32 add1, uint32 i2cdata)   // ftn to send signed 16 bit number to serial port in ASCII format
+{
+    qwer=(int)(((averaged_float/t)-50)*100);
+    unsigned short j;  
+    I2C_CharLCD_MasterSendStart(add1,0);
+   
+    /*for(j=10000;j>=10;j=j/10)    
+        {                      
+            I2C_1_MasterWriteByte((i2cdata/j));
+            i2cdata=i2cdata%j;  
+        }
+    I2C_1_MasterWriteByte(i2cdata); */  
+    if (qwer<0){
+    a=45;
+    qwer=-qwer;    
+    }
+    else{
+        a=32;
+    }
+    e=(int)(qwer)%10;
+    d=(int)(qwer/10)%10;
+    c=(int)(qwer/100)%10;
+    b=(int)(qwer/1000)%10;
+ 
+   
+   
+   
+    I2C_CharLCD_MasterWriteByte(a);
+    I2C_CharLCD_MasterWriteByte(b+48);
+    I2C_CharLCD_MasterWriteByte(c+48);  
+    I2C_CharLCD_MasterWriteByte(d+48);
+    I2C_CharLCD_MasterWriteByte(e+48);
+    I2C_CharLCD_MasterSendStop();
+}
+
+
+void i2c_led_brightness( uint8 add1, uint16 bright)   // ftn to send signed 16 bit number to serial port in ASCII format
+{
+     I2C_CharLCD_MasterSendStart(add1,0);
+    I2C_CharLCD_MasterWriteByte(0x77);
+    I2C_CharLCD_MasterWriteByte(4);
+    I2C_CharLCD_MasterWriteByte(0x7a);
+     I2C_CharLCD_MasterWriteByte(bright);
+    I2C_CharLCD_MasterSendStop();
+}
+
+void averager(){
+    sum_values+=adc_raw;
+    cnt++;
+    if(cnt>=32){
+   // averaged_value= ((sum_values)/10);
+   averaged_value= sum_values>>5;
+   /* if (averaged_value>=262400){                //this is to remove the unwanted range less than -49.9
+     averaged_value=262144;  
+    }
+        */
+    averaged_float=(float)(averaged_value);
+    cnt=0;
+    sum_values=0;
+    }
+}
+
+int main()
+{
+   
+CyGlobalIntEnable; /* Enable global interrupts. */
+
+I2C_CharLCD_Start();
+CharLCD_Start();
+//I2C_CharLCD_Start();
+    ADC_Start();
+    i2c_led_brightness(0x71, 80);
+    UART_1_Start();
+    //PWM_1_Start();
+    ADC_StartConvert();
+    CyGlobalIntEnable; /* Enable global interrupts. */
+for(;;)
+    {
+       
+       
+        // x=(float)y;
+        adc_raw = ADC_GetResult32(); //read ADC
+           if((adc_raw<262144)&&(adc_raw>0))
+        averager();
+        // val++;
+       
+       // UART_1_WriteTxData(adc_raw);
+        //UART_1_WriteTxData(adc_raw>>8);
+        //CyDelay(1000)
+       display_var();
+   
+    //send_data(averaged_value);
+    //CyDelay(100);
+        /*sprintf(outputstring1,"%4.2f",((averaged_float/4355)-10));
+        UART_1_PutString("the value is :");
+        UART_1_PutString(outputstring1);
+        UART_1_PutString("mmWg ");
+        CyDelay(10);
+      */
+  //UART_1_WriteTxData(adc_raw>>8);
+       // UART_1_WriteTxData(adc_raw);
+      //  send_data(566);
+     // returns averaged_value
+         // float averaged_float=(float)(averaged_value/4355);
+   //  sprintf(outputstring1,"%6.3f",averaged_float);
+      // float averaged_float=(float)averaged_value;
+
+   // UART_1_WriteTxData(adc_raw);
+    //UART_1_printf(outputstring1);
+    //averaged_float=0;
+        // change= (averaged_value);
+       // voltage = ADC_CountsTo_Volts(averaged_value);      
+    //sprintf(outputstring, "%6.3f", voltage);
+       // UART_1_PutString(outputstring);
+            //UART_1_PutString(" mmWc ");
+            // print value to UART
+            // UART_1_WriteTxData(adc_raw);
+        //send_data(averaged_value/4355);
+       
+        //UART_1_WriteTxData(averaged_float);
+       
+        //UART_1_WriteTxData(averaged_value>>8);
+       // UART_1_WriteTxData(averaged_value);
+        //converter();
+      // led_indicator();
+       
+/*
+======================================
+| ** CHECK LCD DISPLAY CONNECTION ** |
+=================================================================
+This code will re-initialize the LCD after being disconnected and
+reconnected without having to power off/on or reboot the PSoC.
+=================================================================
+*/
+I2C_status = I2C_CharLCD_MasterStatus();
+
+if ((I2C_status != I2C_CharLCD_MSTAT_WR_CMPLT) && !FlgLCD_ERR)
+{
+FlgLCD_ERR = 1;
+}
+
+if (FlgLCD_ERR && (I2C_status == I2C_CharLCD_MSTAT_WR_CMPLT))
+{
+CyDelay(250u);
+CharLCD_Init();
+CyDelay(250u);
+FlgLCD_ERR = 0;
+}
+CyDelay(1u);
+
+I2C_CharLCD_MasterClearStatus();
+         display_lcd();
+/*
+=============================================
+| ** END of LCD DISPLAY CONNECTION CHECK ** |
+=============================================
+
+
+=====================================================================
+| ** Code Works with either 2x16 LCD Display or 4x20 LCD Display ** |
+=====================================================================
+
+*/
+
+}
+
+}
+/* [] END OF FILE */
